@@ -1,0 +1,125 @@
+<apex:page controller="CMC_DashboardController" sidebar="false" action="{!initializePage}">
+
+<html>
+<head>
+
+<title>CMC Dashboard</title>
+<!--[if IE]><script language="javascript" type="text/javascript" src="{!URLFOR($Resource.FlotDashboard,'flot/excanvas.min.js')}"></script><![endif]-->
+<apex:includeScript value="{!URLFOR($Resource.CMC_jQuery, '/jquery/ui/minified/jquery.min.js')}"/> 
+<script language="javascript" type="text/javascript"
+    src="{!URLFOR($Resource.FlotDashboard,'flot/jquery.flot.js')}"></script>
+<script language="javascript" type="text/javascript"
+    src="{!URLFOR($Resource.FlotDashboard,'flot/jquery.flot.stack.js')}"></script>
+<script language="javascript" type="text/javascript"
+    src="{!URLFOR($Resource.FlotDashboard,'flot/jquery.flot.pie.js')}"></script>
+<style type="text/css">
+    .legend {
+        padding: none;
+        text-align: left;
+    }
+    
+    .legend div {
+        display: block;
+        height: 9px;
+        padding-right: 0px;
+    }
+    
+    .dashBoard td {
+        padding: 5px;
+    }
+
+    .dashBoard .legendColorBox {
+        padding: 2px;
+    }
+    
+    .dashBoard .legendLabel {
+        padding: 2px;
+    }
+
+    .columnHeader {
+        height: 5px;
+        background: darkblue;
+        padding: 0px;
+    }
+
+    .columnHeader td {
+        padding: 0px;
+    }
+
+    
+    .columnTitle {
+        font-size: 13px;
+        text-align: left;
+        padding-bottom: 4px;
+    }
+
+    .graphTitle {
+        font-weight: bold;
+        text-align: center;
+        background: #CCC;
+    }
+
+    .graph {
+        background: #FFF;
+    }
+    
+</style>
+</head>
+<body>
+    <apex:form >
+        <apex:pageBlock >
+            <b>View Dashboard:&nbsp;&nbsp;</b>
+            <apex:selectList value="{!selectItem}" multiselect="false" size="1">
+                <apex:selectOptions value="{!selectItems}" />
+                <!-- <apex:actionSupport event="onchange"
+                    reRender="metricsPanel, projectTrackerPanel" status="status" /> -->
+                <apex:actionSupport event="onchange" action="{!reloadPageByType}" />
+            </apex:selectList>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <apex:outputpanel id="accountPanel" rendered="{!renderAccountPickList}">
+	            <b>Account:&nbsp;&nbsp;</b>
+	            <apex:selectList value="{!selectAccountId}" multiselect="false" size="1" >
+	                <apex:selectOptions value="{!accountOptions}" />
+	                <apex:actionSupport event="onchange" action="{!reloadPageByAccount}" />
+	            </apex:selectList>
+	            &nbsp;&nbsp;&nbsp;&nbsp;
+	            <apex:actionStatus startText=" (refreshing dashboard...)" stopText="" id="status" />
+            </apex:outputpanel>
+        </apex:pageBlock>
+
+        <apex:outputpanel id="projectTrackerPanel">
+            <apex:pageBlock rendered="{!renderProjectTracker}">
+                <c:CMC_ProjectTrackerDashboard />
+            </apex:pageBlock>
+        </apex:outputPanel>
+        
+        <apex:outputPanel id="metricsPanel">
+            <apex:pageBlock rendered="{!renderMetrics}">
+                <c:CMC_MetricsDashboard />
+            </apex:pageBlock>
+        </apex:outputpanel>
+
+        <apex:outputPanel id="googleMetricsPanel">
+            <apex:pageBlock rendered="{!renderGoogleMetrics}">
+                <c:CMC_GoogleMetricsDashboard />
+            </apex:pageBlock>
+        </apex:outputpanel>
+
+        <apex:outputPanel id="monitorPanel">
+            <apex:pageBlock rendered="{!renderMonitor}">
+                <c:CMC_MonitorDashboard />
+            </apex:pageBlock>
+        </apex:outputpanel>
+        
+        <apex:outputPanel id="myTasksPanel" rendered="{!renderMyTasks}">
+                <c:CMC_MyTasksDashboard />
+        </apex:outputpanel>
+        
+    </apex:form>
+	<div id="AuditLinkId" style="display:none">
+	<iframe src="/apex/CMC_AuditLink"></iframe>
+	</div>
+	</body>
+</html>
+
+</apex:page>
