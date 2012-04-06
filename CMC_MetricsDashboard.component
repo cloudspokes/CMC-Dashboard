@@ -1,0 +1,357 @@
+<apex:component controller="CMC_MetricsDashboardController" allowDML="true">
+
+    <table class="dashBoard">
+        <tbody>
+            <tr>
+                <td colspan="3">
+                    <b>Connection:&nbsp;&nbsp;</b>
+                    <apex:selectList value="{!selectedConnectionId}" multiselect="false" size="1">
+                        <apex:selectOptions value="{!connectionItems}" />
+                        <apex:actionSupport event="onchange" action="{!reloadPageByConnection}" />
+                    </apex:selectList>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <apex:actionStatus startText=" (refreshing dashboard...)" stopText="" id="status" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <apex:outputpanel id="metricsDashboardPanel">
+    <table class="dashBoard">
+        <tbody>
+            <tr>
+                <td valign="top">
+                    <table border="0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                            <tr class="columnHeader"><td/></tr>
+                            <tr>
+                                <td class="columnTitle"><h2>Code/Configuration Growth</h2></td>
+                            </tr>
+                            <tr>
+                                <td class="graphTitle">Character Count and Code Density</td>
+                            </tr>
+                            <tr>
+                                <td class="graph"><div id="graph1" style="width: 375px; height: 250px">
+                                    <center>The report returned no results.</center>
+                                </div><center id="legend1" style="border: solid 1px #dddddd; margin-top: 10px"/></td>
+                            </tr>
+                            <tr><td/></tr>
+                            <tr>
+                                <td class="graphTitle">Objects and Fields</td>
+                            </tr>
+                            <tr>
+                                <td class="graph"><div id="graph4" style="width: 375px; height: 250px">
+                                    <center>The report returned no results.</center>
+                                </div><center id="legend4" style="border: solid 1px #dddddd; margin-top: 10px"/></td>
+                            </tr>
+                            <!-- Page metrics -->
+                            <tr>
+                                <td class="graphTitle">Pages</td>
+                            </tr>
+                            <tr>
+                                <td class="graph"><div id="graphPages" style="width: 375px; height: 250px">
+                                    <center>The report returned no results.</center>
+                                </div><center id="legendPages" style="border: solid 1px #dddddd; margin-top: 10px"/></td>
+                            </tr>
+                            
+                            <!-- Page metrics end-->
+                            
+                        </tbody>
+                    </table></td>
+                <td valign="top" class="dashMed col2">
+                    <table border="0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                            <tr class="columnHeader"><td/></tr>
+                            <tr>
+                                <td class="columnTitle"><h2>Code Quality</h2></td>
+                            </tr>
+                            <tr>
+                                <td class="graphTitle">Lines of Code (LOC) and Asserts</td>
+                            </tr>
+                            <tr>
+                                <td class="graph"><div id="graph2" style="width: 375px; height: 250px">
+                                    <center>The report returned no results.</center>
+                                </div><center id="legend2" style="border: solid 1px #dddddd; margin-top: 10px"/></td>
+                            </tr>
+                            <tr><td/></tr>
+                            <tr>
+                                <td class="graphTitle">Lines of Code (LOC) and Test Methods</td>
+                            </tr>
+                            <tr>
+                                <td class="graph"><div id="graph3" style="width: 375px; height: 250px">
+                                    <center>The report returned no results.</center>
+                                </div><center id="legend3" style="border: solid 1px #dddddd; margin-top: 10px"/></td>
+                            </tr>
+                        </tbody>
+                    </table></td>
+                <td valign="top" class="dashMed col3">
+                    <table border="0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                            <tr class="columnHeader"><td/></tr>
+                            <tr>
+                                <td class="columnTitle"><h2>Code Quality</h2></td>
+                            </tr>
+                            <tr>
+                                <td class="graphTitle">Code Coverage and Tests</td>
+                            </tr>
+                            <tr>
+                                <td class="graph"><div id="graph5" style="width: 375px; height: 250px">
+                                    <center>The report returned no results.</center>
+                                </div><center id="legend5" style="border: solid 1px #dddddd; margin-top: 10px"/></td>
+                            </tr>
+                        </tbody>
+                    </table></td>
+            </tr>
+        </tbody>
+    </table>
+ 
+    <script id="source" language="javascript" type="text/javascript">
+        <apex:outputText rendered="{!ShowCharacterCountAndCodeDensity}">
+        $(function() {
+            var sin = {!SumCharacterCount}, cos = {!AverageCodeDesity};
+            var plot = $.plot($("#graph1"), [
+            {
+                data : sin,
+                bars : { show: true , fill: 1, barWidth: 0.7, lineWidth: 0, align: 'center'},
+                label : "Character Count"
+            }, {
+                data : cos,
+                lines : { show: true, align: 'center'},
+                points : { show: true, fill: true, radius: 1 },
+                label : "% Code Density",
+                yaxis: 2,
+                shadowSize: 0
+            }],
+            { 
+                colors: ["#78c953", "#2a81d4"],
+                xaxes: [ { ticks: {!JobTicks} } ],
+                yaxis: { min : 0 },
+                yaxes : [ {}, { 
+                    position : "right", color: "#2a81d4"
+                } ],
+                legend: { noColumns: '2',container: $("#legend1") },
+                grid: { hoverable: true, clickable: true }
+            });
+        });
+        $("#graph1").addClass("glow-on-hover");
+        $("#graph1").attr("title", "Click for detailed report");
+        $("#graph1").bind("click", function (event, pos, item) {
+            window.location = "/" + "{!reportIds.Report_Character_Count_and_Code_Density__c}" + 
+                        "?pv0={!URLENCODE(CurrentAccountId)}&pv1={!URLENCODE(latestCodeMetricsJobResultId)}";
+        });
+        </apex:outputText>
+
+        <apex:outputText rendered="{!ShowLOCAndAsserts}">
+        $(function() {
+            var sin = {!SumLineCount}, cos = {!LOCPerAsset};
+            var plot = $.plot($("#graph2"), [
+            {
+                data : sin,
+                bars : { show: true , fill: 1, barWidth: 0.7, lineWidth: 0, align: 'center'},
+                label : "Line Count"
+            }, {
+                data : cos,
+                lines : { show: true, align: 'center'},
+                points : { show: true, fill: true, radius: 1 },
+                label : "LOC per Assert",
+                yaxis: 2,
+                shadowSize: 0
+            }],
+            {
+                colors: ["#78c953", "#2a81d4"],
+                xaxes: [ { ticks: {!JobTicks} } ],
+                yaxis: { min : 0 },
+                yaxes : [ {}, { 
+                    position : "right", color: "#2a81d4"
+                } ],
+                legend: { noColumns: '2',container: $("#legend2") },
+                grid: { hoverable: true, clickable: true }
+            });
+        });
+        $("#graph2").addClass("glow-on-hover");
+        $("#graph2").attr("title", "Click for detailed report");
+        $("#graph2").bind("click", function (event, pos, item) {
+            window.location = "/" + "{!reportIds.Report_LOC_and_Asserts__c}" + 
+                        "?pv0={!URLENCODE(CurrentAccountId)}&pv1={!URLENCODE(latestCodeMetricsJobResultId)}";
+        });
+       </apex:outputText>
+        
+        <apex:outputText rendered="{!ShowLOCAndTestMethods}">
+        $(function() {
+            var sin = {!SumLineCount}, cos = {!LOCPerTestMethod};
+            var plot = $.plot($("#graph3"), [
+            {
+                data : sin,
+                bars : { show: true , fill: 1, barWidth: 0.7, lineWidth: 0, align: 'center'},
+                label : "Line Count"
+            }, {
+                data : cos,
+                lines : { show: true, align: 'center'},
+                points : { show: true, fill: true, radius: 1 },
+                label : "LOC per Test",
+                yaxis: 2,
+                shadowSize: 0
+            }],
+            {
+                colors: ["#78c953", "#2a81d4"],
+                xaxes: [ { ticks: {!JobTicks} } ],
+                yaxis: { min : 0 },
+                yaxes : [ {}, { 
+                    position : "right", color: "#2a81d4"
+                } ],
+                legend: { noColumns: '2',container: $("#legend3") }
+            });
+        });
+        $("#graph3").addClass("glow-on-hover");
+        $("#graph3").attr("title", "Click for detailed report");
+        $("#graph3").bind("click", function (event, pos, item) {
+            window.location = "/" + "{!reportIds.Report_LOC_and_Test_Methods__c}" + 
+                        "?pv0={!URLENCODE(CurrentAccountId)}&pv1={!URLENCODE(latestCodeMetricsJobResultId)}";
+        });
+        </apex:outputText>
+
+        <apex:outputText rendered="{!ShowCustomObjectsAndFields}">
+        $(function() {
+        	var _dataYAxis = {!SumFieldCount};
+            var _dataCustObj = {!ObjectCount};
+            var _dataCustSet ={!CustomSettingCount};
+            var css_id4 = "#graph4"; 
+            var data = [
+	                {label: 'Custom Object Count', data: _dataCustObj},
+	                {label: 'Custom Setting Count', data: _dataCustSet},
+	                { 
+	                   data : _dataYAxis,
+	                   points : { show: true, fill: true, radius: 1 },
+	                   lines : { show: true},
+	                   bars : { show: false},
+	                   label : "Field Count",
+	                   yaxis: 2,
+	                   stack: null,
+	                   shadowSize: 0
+	               	}
+            	];
+            var options = {
+                colors: [ "#78c953", "#F3D904", "#2a81d4"],
+                series: {stack: 0,
+                        lines: {show: false, steps: false },
+                        bars: {show: true, fill: 1, barWidth: 0.7, lineWidth: 0, align: 'center',},},
+                xaxes: [ { ticks: {!JobTicks} } ],
+                yaxes : [ {min:0}, { min:0, position : "right", color: "#2a81d4"} ],
+                legend: { 
+         				noColumns: '2',
+                		container: $("#legend4")
+                         }   
+                };
+            $.plot($(css_id4), data, options);
+        });
+        $("#graph4").addClass("glow-on-hover");
+        $("#graph4").attr("title", "Click for detailed report");
+        $("#graph4").bind("click", function (event, pos, item) {
+            window.location = "/" + "{!reportIds.Report_Custom_Objects_and_Fields__c}" + 
+                        "?pv0={!URLENCODE(CurrentAccountId)}&pv1={!URLENCODE(latestCodeMetricsJobResultId)}";
+        });
+        </apex:outputText>
+        
+        // VF Pages 
+        <apex:outputText rendered="{!ShowPagesMetrics}">
+        $(function() {
+            var _dataCustObj = {!NumberOfPageLines};
+            var _dataCustSet ={!NumberOfPages};
+            var css_id6 = "#graphPages"; 
+            var data = [
+	                {
+	                label: 'Page Line Count', 
+	                data: _dataCustObj,
+	                bars : { show: true , fill: 1, barWidth: 0.7, lineWidth: 0, align: 'center'}
+	                },
+	                {
+	                label: 'Page Count', 
+	                data: _dataCustSet, 
+	                yaxis: 2,
+	                lines : { show: true, align: 'center'},
+                	points : { show: true, fill: true, radius: 1 },
+	                shadowSize: 0
+	                }
+            	];
+            var options = {
+                colors: ["#78c953", "#2a81d4"], 
+                xaxes: [ { ticks: {!JobTicks} } ],
+                yaxis: { min : 0 },
+                yaxes : [ {}, { 
+                    position : "right", color: "#2a81d4"
+                } ],
+                legend: { 
+         				noColumns: '2',
+                		container: $("#legendPages")
+                        }   
+                };
+            $.plot($(css_id6), data, options); 
+        });
+        $("#graphPages").addClass("glow-on-hover");
+        $("#graphPages").attr("title", "Click for detailed report"); 
+        $("#graphPages").bind("click", function (event, pos, item) {
+            window.location = "/" + "{!reportIds.Report_Pages_Line_And_Char_Count__c}" + 
+                        "?pv0={!URLENCODE(CurrentAccountId)}&pv1={!URLENCODE(latestCodeMetricsJobResultId)}";
+        });
+        </apex:outputText>
+        
+        // End VF Pages
+        
+        
+        <apex:outputText rendered="{!ShowCodeCoverageAndTestFailures}">
+        $(function() {
+        	var _dataYAxis = {!CodeCoverage};
+            var _dataTestFailCount = {!TestFailureCount};
+            var _dataTestInactiveCount ={!TestInactiveCount};
+            var css_id5 = "#graph5"; 
+            var data =  [
+	                {label: 'Test Failure Count', data: _dataTestFailCount},
+	                {label: 'Test Inactive Count', data: _dataTestInactiveCount},
+	                { 
+	                   data : _dataYAxis,
+	                   points : { show: true, fill: true, radius: 1 },
+	                   lines : { show: true},
+	                   bars : { show: false},
+	                   label : "% Code Coverage",
+	                   yaxis: 2,
+	                   stack: null,
+	                   shadowSize: 0
+	               	}
+            	];
+            var options = {
+                colors: ["#cc00000","#F3D904","#2a81d4"],
+                series: {stack: 0,
+                        lines: {show: false, steps: false },
+                        bars: {show: true, fill: 1, barWidth: 0.7, lineWidth: 0, align: 'center',},},
+                xaxes: [ { ticks: {!JobTicks} } ],
+                yaxes : [ {min:0}, { min:0, position : "right", color: "#2a81d4"} ],
+                legend: { 
+         				noColumns: '2',
+                		container: $("#legend5")
+                         }   
+                };
+            $.plot($(css_id5), data, options);
+        });
+        $("#graph5").addClass("glow-on-hover");
+        $("#graph5").attr("title", "Click for detailed report");
+        $("#graph5").bind("click", function (event, pos, item) {
+            window.location = "/" + "{!reportIds.Report_Test_Failures_and_Code_Coverage__c}" + 
+                        "?pv0={!URLENCODE(CurrentAccountId)}&pv1={!URLENCODE(latestCodeCoverageMetricsJobResultId)}";
+        });
+        </apex:outputText>
+        
+    </script>
+    <style>
+       .glow-on-hover:hover {
+           box-shadow:#111 0 -2px 6px; 
+           -webkit-box-shadow:#111 0 -2px 6px;  
+           -moz-box-shadow:#111 0 -2px 6px; 
+           -o-box-shadow:#111 0 -2px 6px; 
+           cursor: pointer;
+           background-color: #fffedf;  
+            
+       }
+    </style>
+    
+    </apex:outputpanel>
+
+</apex:component>

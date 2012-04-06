@@ -1,0 +1,410 @@
+<apex:component controller="CMC_MyTasksDashboardController" allowDML="true">
+    <script language="javascript" type="text/javascript"
+        src="{!URLFOR($Resource.FlotDashboard,'flot/jquery.js')}"></script>
+    <script language="javascript" type="text/javascript"
+        src="{!URLFOR($Resource.FlotDashboard,'flot/jquery.flot.js')}"></script>
+    <script language="javascript" type="text/javascript"
+        src="{!URLFOR($Resource.FlotDashboard,'flot/jquery.flot.stack.js')}"></script>
+    <script language="javascript" type="text/javascript"
+        src="{!URLFOR($Resource.FlotDashboard,'flot/jquery.flot.pie.js')}"></script> 
+  <style>
+   .glow-on-hover:hover {
+           box-shadow:#111 0 -2px 6px; 
+           -webkit-box-shadow:#111 0 -2px 6px; 
+           -moz-box-shadow:#111 0 -2px 6px; 
+           -o-box-shadow:#111 0 -2px 6px; 
+           cursor: pointer;
+           background-color: #fffedf;     
+    }
+    
+    .legend {
+        padding: none;
+        text-align: left;
+    }
+    
+    .legend div {
+        display: block;
+        height: 9px;
+        padding-right: 0px;
+    }
+    
+    .dashBoard td {
+        padding: 5px;
+    }
+
+    .dashBoard .legendColorBox {
+        padding: 2px;
+    }
+    
+    .dashBoard .legendLabel {
+        padding: 2px;
+    }
+
+    .columnHeader {
+        height: 5px;
+        background: darkblue;
+        padding: 0px;
+    }
+
+    .columnHeader td {
+        padding: 0px;
+    }
+
+    .columnTitle {
+        font-size: 13px;
+        text-align: left;
+        padding-bottom: 4px;
+    }
+
+    .graphTitle {
+        font-weight: bold;
+        text-align: center;
+        background: #CCC;
+    }
+
+    .graph {
+        background: #FFF;
+    }
+    </style>
+        <apex:pageBlock > 
+            <table class="dashBoard">
+            <tbody> 
+                <tr>
+                    <td colspan="3">
+                    <b>Task Owner:&nbsp;&nbsp;</b>
+                        <apex:selectList value="{!selectedOwner}" multiselect="false" size="1" id="ownerSelect">
+                            <apex:selectOptions value="{!ownerItems}" />
+                            <apex:actionSupport event="onchange" action="{!reloadPageByTaskOwner}" rerender="productSelect,sprintSelect,selectView,dataTable,userChatterOP,chartPanel" status="chatterStatus"/>
+                        </apex:selectList>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                         <b>Product:&nbsp;&nbsp;</b>
+                        <apex:selectList value="{!selectedProductId}" multiselect="false" size="1" id="productSelect">
+                            <apex:selectOptions value="{!productItems}" />
+                            <apex:actionSupport event="onchange" action="{!reloadPageByProduct}" rerender="sprintSelect,selectView,dataTable,chartPanel" status="sprintStatus"/>
+                        </apex:selectList>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <b>Sprint:&nbsp;&nbsp;</b>
+                        <apex:selectList value="{!selectedSprintId}" multiselect="false" size="1" id="sprintSelect">
+                            <apex:selectOptions value="{!sprintItems}" />
+                            <apex:actionSupport event="onchange" action="{!reloadPageBySprint}" rerender="selectView,dataTable,chartPanel" status="dataTableStatus"/>
+                        </apex:selectList>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <apex:actionStatus startText=" (refreshing ...)" stopText="" id="chatterStatus" /> 
+                        &nbsp;&nbsp;&nbsp;&nbsp; 
+                        <apex:actionStatus startText=" (refreshing sprint...)" stopText="" id="sprintStatus" />
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <apex:actionStatus startText=" (refreshing view...)" stopText="" id="dataTableStatus" />
+                    </td>
+                </tr>
+            </tbody> 
+            </table>
+        </apex:pageBlock>
+        
+        <apex:pageBlock >
+            <b>Select View:&nbsp;&nbsp;</b> 
+            <apex:selectList value="{!selectedView}" multiselect="false" size="1" id="selectView">
+                <apex:selectOptions value="{!viewItems}" />
+                <apex:actionSupport event="onchange" action="{!reloadPageByListView}" rerender="dataTable" status="listViewStatus"/>
+            </apex:selectList>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <apex:actionStatus startText=" (refreshing View...)" stopText="" id="listViewStatus" />
+            <div id="dataTable" style="overflow:auto; height:160px;">
+            <apex:outputPanel id="dataTable">
+                <apex:pageBlockTable id="issueTable" value="{!issues}" var="issue" rowClasses="odd,even" styleClass="tableClass" rendered="{!isIssue}" cellPadding="4" border="1px">
+                    <apex:column >
+                        <apex:facet name="header">Issue Number</apex:facet>
+                        <apex:outputLink value="/{!issue.Id}" id="issueLink">{!issue.Name}</apex:outputLink>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Issue Name</apex:facet>
+                        <apex:outputText value="{!issue.Bug_Name__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Component</apex:facet>
+                        <apex:outputText value="{!issue.Component__r.Name}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Priority</apex:facet>
+                        <apex:outputText value="{!issue.Priority__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Ranking</apex:facet>
+                        <apex:outputText value="{!issue.Ranking__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Status</apex:facet>
+                        <apex:outputText value="{!issue.Status__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Dev LOE</apex:facet>
+                        <apex:outputText value="{!issue.Dev_LOE__c}"/>
+                    </apex:column>
+                </apex:pageBlockTable>
+                
+                <apex:pageBlockTable id="storyTable" value="{!stories}" var="story" rowClasses="odd,even" styleClass="tableClass" rendered="{!isStory}" cellPadding="4" border="1px">
+                    <apex:column >
+                        <apex:facet name="header">Story Number</apex:facet>
+                        <apex:outputLink value="/{!story.Id}" id="storyLink">{!story.Name}</apex:outputLink>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Story Name</apex:facet>
+                        <apex:outputText value="{!story.Story_Name__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Component</apex:facet>
+                        <apex:outputText value="{!story.Component__r.Name}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Priority</apex:facet>
+                        <apex:outputText value="{!story.Priority__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Ranking</apex:facet>
+                        <apex:outputText value="{!story.Ranking__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Status</apex:facet>
+                        <apex:outputText value="{!story.Status__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Dev LOE</apex:facet>
+                        <apex:outputText value="{!story.Dev_LOE__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Remaining Task LOE</apex:facet>
+                        <apex:outputText value="{!story.Remaining_Task_LOE__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">% Testing Complete</apex:facet>
+                        <apex:outputText value="{!story.Testing_Complete__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Test Cases Count</apex:facet>
+                        <apex:outputText value="{!story.Test_Cases_Total_Count__c}"/>
+                    </apex:column>
+                </apex:pageBlockTable>
+                
+                <apex:pageBlockTable id="taskTable" value="{!tasks}" var="task" rowClasses="odd,even" styleClass="tableClass" rendered="{!isTask}" cellPadding="4" border="1px">>
+                    <apex:column >
+                        <apex:facet name="header">Task Number</apex:facet>
+                        <apex:outputLink value="/{!task.Id}" id="taskLink">{!task.Name}</apex:outputLink>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Task Name</apex:facet>
+                        <apex:outputText value="{!task.Task_Name__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Component</apex:facet>
+                        <apex:outputText value="{!task.Component__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Story</apex:facet>
+                        <apex:outputLink value="/{!task.Story__c}" id="taskStoryLink">{!task.Story__r.Name}</apex:outputLink>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Issue</apex:facet>
+                        <apex:outputLink value="/{!task.Bug__c}" id="taskIssueLink">{!task.Bug__r.Name}</apex:outputLink>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Story/Issue Ranking</apex:facet>
+                        <apex:outputText value="{0,number,integer}">
+                        	<apex:param value="{!task.Story_Bug_Ranking__c}" />
+                        </apex:outputText> 
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Due Date</apex:facet>
+                        <apex:outputText value="{0,date,MM'/'dd'/'yyyy}">
+                        	<apex:param value="{!task.Due_Date__c}" />
+                        </apex:outputText>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Estimated LOE</apex:facet>
+                        <apex:outputText value="{0,number,integer}">
+                        	<apex:param value="{!task.Estimated_LOE__c}" />
+                        </apex:outputText>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Remaining LOE</apex:facet>
+                        <apex:outputText value="{0,number,integer}">
+                        	<apex:param value="{!task.Remaining_LOE__c}" />
+                        </apex:outputText>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Status</apex:facet>
+                        <apex:outputText value="{!task.Status__c}"/>
+                    </apex:column>
+                    <apex:column rendered="{!isByUnstartableTask}" >
+                        <apex:facet name="header">Prerequisite Task</apex:facet>
+                        <apex:outputLink value="/{!task.Prerequisite_Task__c}" id="taskprereqLink">{!task.Prerequisite_Task__r.Name}</apex:outputLink>
+                    </apex:column>
+                    <apex:column rendered="{!isByUnstartableTask}"  >
+                        <apex:facet name="header">Prerequisite Task Status</apex:facet>
+                        <apex:outputText value="{!task.Prerequisite_Task_Status__c}"/>
+                    </apex:column>
+                    
+                </apex:pageBlockTable> 
+             </apex:outputPanel>
+             </div>
+        </apex:pageBlock>
+              
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;Show Task Burndown:&nbsp;&nbsp;</b>
+        <apex:selectList value="{!selectedChart}" multiselect="false" size="1" id="chartSelect">
+                            <apex:selectOptions value="{!chartItems}" /> 
+                            <apex:actionSupport event="onchange" action="{!reloadMyTaskPage}" rerender="chartPanel" status="chartStatus"/>
+        </apex:selectList>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <apex:actionStatus startText=" (refreshing chart...)" stopText="" id="chartStatus" />
+        
+        <table class="dashBoard" width="100%">
+        <tbody>
+            <tr>
+                <td valign="top" width="50%"> 
+                    <apex:outputPanel id="chartPanel">
+                        <apex:outputpanel id="burndownByTaskStatus_Blank" rendered="{!isByTaskStatus}">
+                        <table border="0" cellpadding="0" cellspacing="0">
+                            <tbody>
+                                <tr class="columnHeader"><td/></tr>
+                                <tr>
+                                    <td class="columnTitle"><h2>Burndown</h2></td>
+                                </tr>
+                                <tr>
+                                    <td class="graphTitle">Task Burndown by Task Status</td>
+                                </tr>
+                                <tr>
+                                    <td class="graph"><div id="graph1" style="width: 375px; height: 250px">
+                                     <center><p>The report returned no results.</p><p style="color:grey;font-style:italic;">Hint: Check that parent Stories/Issues for Tasks in this Sprint<br/>have Priority set, Tasks have Estimated LOE set, and<br/>the Sprint is marked Active.</p></center>
+                                     </div><center style="border: solid 1px #dddddd; margin-top: 10px" id="taskLegend"/></td>
+                                </tr>
+                             </tbody>
+                            <apex:outputpanel id="burndownByTaskStatus" rendered="{!hasBurndownData}">
+                            <script id="source" language="javascript" type="text/javascript">                    
+                            $(function() {
+                                        var showLOELabel = {!isFixedFee} ? false : true;
+                                       
+                                        var _dataYAxis = {!AverageDaysRemaining};
+                                        var _dataDraft = {!sumRemainingLOEDraft};
+                                        var _dataPlanned = {!sumRemainingLOEPlanned};
+                                        var _dataProgress = {!sumRemainingLOEProgress};
+                                        var _dataBlocked = {!sumRemainingLOEBlocked};
+                                        var _dataReview = {!sumRemainingLOEReview};
+                                        var css_id = "#graph1";
+                                        var data = [
+                                            {label: 'Sum of Remaining LOE: Ready for Review', data: _dataReview},
+                                            {label: 'Sum of Remaining LOE: Blocked', data: _dataBlocked},
+                                            {label: 'Sum of Remaining LOE: In Progress', data: _dataProgress},
+                                            {label: 'Sum of Remaining LOE: Planned', data: _dataPlanned},
+                                            {label: 'Sum of Remaining LOE: Draft', data: _dataDraft},
+                                            { 
+                                                data : _dataYAxis,
+                                                points : { show: true, fill: true, radius: 1 },
+                                                lines : { show: true},
+                                                bars : { show: false},
+                                                label : "Average Days Remaining in Sprint",
+                                                yaxis: 2,
+                                                stack: null,
+                                                shadowSize: 0 
+                                            }
+                                        ];
+                                        var options = {
+                                            colors: ["#33CCFF","#CC0000","#0B6FCE","#AFCADF","#996633","#0b6FCE"], 
+                                            series: {stack: 0,
+                                                     lines: {show: false, steps: false },
+                                                     bars: {show: true, fill: 1, barWidth: 0.7, lineWidth: 0, align: 'center',},},
+                                            xaxes: [ { ticks: {!BurndownTicks} } ],
+                                            yaxes : [  { show: showLOELabel,min:0 }, {position:"right",min:0,color:"#0b6FCE"}],
+                                            legend: { 
+                                                    noColumns: '2',
+                                                    container: $("#taskLegend")
+                                                    }   
+                                        };
+                                    
+                                        $.plot($(css_id), data, options);
+                                    });     
+                            $("#graph1").addClass("glow-on-hover");
+        					$("#graph1").attr("title", "Click for report of Open Tasks by Status and Task Owner");                  
+                            $("#graph1").bind("click", function (event, pos, item) {
+                                window.location = "/" + "{!reportIds.Report_Task_Burndown_by_Developer_Status__c}" + "?pv0={!URLENCODE(trimmedSelectedSprintAccountId)}&pv1={!URLENCODE(trimmedSprintId)}&pv2={!URLENCODE(selectedOwnerName)}";
+                            }); 
+                            </script>
+                            </apex:outputpanel>    
+                        </table>
+                        </apex:outputpanel>  
+                        
+                        <apex:outputpanel id="burndownByStoryPriority_Blank" rendered="{!isByStoryPriority}">
+                        <table border="0" cellpadding="0" cellspacing="0">
+                        	
+                            <tbody>
+                                <tr class="columnHeader"><td/></tr>
+                                <tr>
+                                    <td class="columnTitle"><h2>Burndown</h2></td>
+                                </tr>
+                                <tr>
+                                    <td class="graphTitle">Task Burndown by Story/Issue Priority</td>
+                                </tr>
+                                <tr>
+                                    <td class="graph"><div id="graph2" style="width: 375px; height: 250px">
+                                     <center><p>The report returned no results.</p><p style="color:grey;font-style:italic;">Hint: Check that parent Stories/Issues for Tasks in this Sprint<br/>have Priority set, Tasks have Estimated LOE set, and<br/>the Sprint is marked Active.</p></center>
+                                     </div><center style="border: solid 1px #dddddd; margin-top: 10px" id="storyLegend"/></td>
+                                </tr>
+                            </tbody>
+                            <apex:outputpanel id="burndownByStoryPriority" rendered="{!hasBurndownData}">
+                            <script id="source" language="javascript" type="text/javascript">                    
+                              $(function() {
+                                        var showLOELabel = {!isFixedFee} ? false : true;
+                                        var _dataYAxis = {!AverageDaysRemaining};
+                                        var _dataP1 = {!sumRemainingLOEP1};
+                                        var _dataP2 = {!sumRemainingLOEP2};
+                                        var _dataP3 = {!sumRemainingLOEP3};
+                                        var _dataP4 = {!sumRemainingLOEP4};
+                                        var _dataP5 = {!sumRemainingLOEP5};
+                                        var _dataNP = {!sumRemainingLOENP};
+                                        var css_id2 = "#graph2";
+                                        var data = [
+                                            {label: 'P1 Remaining LOE', data: _dataP1},
+                                            {label: 'P2 Remaining LOE', data: _dataP2},
+                                            {label: 'P3 Remaining LOE', data: _dataP3},
+                                            {label: 'P4 Remaining LOE', data: _dataP4},
+                                            {label: 'P5 Remaining LOE', data: _dataP5},
+                                            {label: 'No Priority', data: _dataNP},
+                                            { 
+                                                data : _dataYAxis,
+                                                points : { show: true, fill: true, radius: 1 },
+                                                lines : { show: true},
+                                                bars : { show: false},
+                                                label : "Average Days Remaining in Sprint",
+                                                yaxis: 2,
+                                                stack: null,
+                                                shadowSize: 0
+                                            }
+                                        ];
+                                        var options = {
+                                            colors: ["#CC0000", "#FF6600", "#F3D904", "#78C953", "#419249", "#bbbbbb","#0b6FCE"],
+                                            series: {stack: 0,
+                                                     lines: {show: false, steps: false },
+                                                     bars: {show: true, fill: 1, barWidth: 0.7, lineWidth: 0, align: 'center',},},
+                                            xaxes: [ { ticks: {!BurndownTicks} } ],
+                                            yaxes : [  { show: showLOELabel,min:0 }, {position:"right",min:0,color:"#0b6FCE"}],
+                                            legend: { 
+                                                    noColumns: '2',
+                                                    container: $("#storyLegend")
+                                                    }   
+                                        };
+                                    
+                                        $.plot($(css_id2), data, options);
+                                    });
+                            $("#graph2").addClass("glow-on-hover");
+        					$("#graph2").attr("title", "Click for report of Open Tasks by Status and Task Owner");
+                            $("#graph2").bind("click", function (event, pos, item) {
+                                window.location = "/" + "{!reportIds.Report_Task_Burndown_by_Dev_Str_Isu_Prty__c}" + "?pv0={!URLENCODE(trimmedSelectedSprintAccountId)}&pv1={!URLENCODE(trimmedSprintId)}&pv2={!URLENCODE(selectedOwnerName)}";
+                            }); 
+                            </script>
+                            </apex:outputpanel>
+                        </table>
+                        </apex:outputpanel>
+                        
+                 </apex:outputPanel>
+                 </td>
+            </tr>
+        </tbody> 
+        </table> 
+</apex:component>
