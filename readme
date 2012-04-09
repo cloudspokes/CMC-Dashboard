@@ -1,0 +1,10 @@
+About
+-----
+
+Reproducing the issue we are looking to have resolved:
+
+1.  Currently if you unzip the contest.zip to your local filesystem.
+2.  Then install firefox 3.6 and open the index.htm the pie chart will not render
+3.  We'd like to get it to render.
+
+
